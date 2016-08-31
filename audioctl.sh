@@ -4,9 +4,35 @@
 # Obviously the indices listed only apply to my system
 
 # set output indices
+while read -r line
+do
+	if [[ $line == "Sink #"* ]]
+	then
+		tmp_out="${line:-1}"
+		echo "$tmp_out"
+	else if [[ $line == "device.description" ]]
+	then
+		tmp_desc="$(echo $line | cut -d "=" -f 2)"
+		case $tmp_desc in
+			*$HEADPHONE_DESC*)
+				HEADPHONES=$tmp_out
+				;;
+			*$SPEAKERS_DESC*)
+				SPEAKERS=$tmp_out
+				;;
+		esac
+
+		# or use ifs?
+		if [[ $tmp_desc == "$HEADPHONE_DESC" ]]
+		then
+			HEADPHONES=$tmp_out
+		else if [[ $(echo $line | 
+	fi
+done < <(pactl list sinks | grep -e "Sink #" -e "device.description")
+
 HEADPHONES="4"
 SPEAKERS="1"
-# `pactl list cards` to retrieve card info
+# `pactl list sinks` to retrieve card info
 # only the index is required for moving audio
 
 # show help 
@@ -25,10 +51,10 @@ main(){
 	if [ -z "$1" ];then
 		usage
 	fi
-	#pactl list short sink-inputs
+	pactl list short sink-inputs
 	for snd in $(pactl list short sink-inputs | awk '{print $1;}' )
 	do 
-		#echo "$sink"
+		echo "$snd"
 		pactl move-sink-input $snd $1 1>/dev/null 2>/dev/null
 		pactl set-default-sink $1 1>/dev/null 2>/dev/null
 	done
@@ -56,5 +82,6 @@ case "$1" in
 		;;
 esac
 
+echo "$output"
 main $output
 	
