@@ -26,10 +26,11 @@ main(){
 		usage
 	fi
 	#pactl list short sink-inputs
-	for sink in $(pactl list short sink-inputs | awk '{print $1;}' )
+	for snd in $(pactl list short sink-inputs | awk '{print $1;}' )
 	do 
 		#echo "$sink"
-		pactl move-sink-input $sink $1 1>/dev/null 2>/dev/null
+		pactl move-sink-input $snd $1 1>/dev/null 2>/dev/null
+		pactl set-default-sink $1 1>/dev/null 2>/dev/null
 	done
 }
 
