@@ -14,8 +14,9 @@ OUTPUT2="1"
 
 fullsink="$(pactl list sinks short | awk '{print $1}')"
 runningsinks="$(pactl list sinks short | grep RUNNING | awk '{print $1}')"
-
-source $OUTPUT_CONF
+if [ -f "$OUTPUT_CONF" ];then
+	source $OUTPUT_CONF
+fi
 
 # Setup outputs by user conf file $OUTPUT_CONF
 if [ -f "$OUTPUT_CONF" ]; then
@@ -71,6 +72,15 @@ setup(){
 	done < <(pactl list sinks | grep device.description | awk -F= '{print $2}' | cut -d '"' -f 2)
 	printf "Please select up to two devices: "
 	read newdevs
+
+	# for (( c=1; c<$index; c++ )); do
+	# 	for d in $newdevs; do
+	# 		if [[ "$c" == "$d" ]]; then
+	# 			conf1="OUTPUT1=$"
+	#		fi
+	# 	done
+	# done
+
 }
 
 list(){
@@ -112,7 +122,6 @@ case "$1" in
 		do
 			case "$2" in	
 				up)
-					echo $sink
 					pactl set-sink-mute $sink false
 					pactl set-sink-volume $sink +$INCREMENT%
 					;;
