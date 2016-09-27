@@ -12,8 +12,6 @@ INCREMENT='5'
 OUTPUT1="4"
 OUTPUT2="1"
 
-fullsink="$(pactl list sinks short | awk '{print $1}')"
-runningsinks="$(pactl list sinks short | grep RUNNING | awk '{print $1}')"
 if [ -f "$OUTPUT_CONF" ];then
 	source $OUTPUT_CONF
 fi
@@ -40,13 +38,15 @@ if [ -f "$OUTPUT_CONF" ]; then
 	done < <(pactl list sinks)
 fi
 
+function join_by { local IFS="$1"; shift; echo "$*"; }
+
 usage(){
 	echo """audioctl - tcarrio's custom media manipulation script
 
 		setup           configure output devices to use
 		list            display output device configuration
 		1               send audio to OUPUT1
-		2               send audio to OUTPUT1
+		2               send audio to OUTPUT2
 		sound           sound controls
 		help            show usage help
 """
@@ -59,28 +59,31 @@ sound_usage(){
 		up              turn the source volume up
 		down            turn the source volume down
 		toggle          toggle mute status
+		help            show sound usage help
 """
 	return
 }
 	
 setup(){
 	echo "Setup"
-	index=1
+	list_index=1
 	while read device; do
-		printf "[%s] - %s\n" $index "$device"
-		index=$(expr $index + 1)
+		printf "[%s] - %s\n" $list_index "$device"
+		list_index=$(expr $list_index + 1)
 	done < <(pactl list sinks | grep device.description | awk -F= '{print $2}' | cut -d '"' -f 2)
 	printf "Please select up to two devices: "
 	read newdevs
-
-	# for (( c=1; c<$index; c++ )); do
-	# 	for d in $newdevs; do
-	# 		if [[ "$c" == "$d" ]]; then
-	# 			conf1="OUTPUT1=$"
-	#		fi
-	# 	done
-	# done
-
+	newdevsarr=($newdevs)
+	pactl list sinks|grep device.description|awk -F= '{print $2}'|cut -d '"' -f 2|sed -n $(join_by , "${newdevsarr[@]}")p>$PROG_DIR/tmp.conf
+	local IFS='
+'	
+	conf_index=1
+	rm $OUTPUT_CONF
+	cat $PROG_DIR/tmp.conf|while read line; do
+		printf 'OUTPUT%s="%s"\n' $conf_index $line >> $OUTPUT_CONF
+		conf_index=$(expr $conf_index + 1)
+	done
+	rm $PROG_DIR/tmp.conf
 }
 
 list(){
@@ -110,11 +113,18 @@ case "$1" in
 		output=$OUTPUT2
 		;;
 	toggle)
-		current_device="$(pactl list short sink-inputs | tail -n 1 | awk '{print $2;}')"
-		if [ "$current_device" == "$OUTPUT1" ]; then
-			output=$OUTPUT2
+		if [ -n "$OUTPUT1" ];then
+			current_device="$(pactl list short sink-inputs | tail -n 1 | awk '{print $2;}')"
+			if [ "$current_device" == "$OUTPUT1" ]; then
+				output=$OUTPUT2
+			else
+				output=$OUTPUT1
+			fi
 		else
-			output=$OUTPUT1
+			echo """
+You have not configured your output devices!
+Please use `audioctl setup` to start your configuration
+"""
 		fi
 		;;
 	sound)
