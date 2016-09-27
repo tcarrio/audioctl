@@ -1,96 +1,136 @@
 #!/usr/bin/env bash
 #	Simple utility for toggling audio channels
 #	I don't like pulling up settings to do this so here's a short script 
-# Obviously the indices listed only apply to my system
-
+# 	Obviously the indices listed only apply to my system
+PROG_DIR="/home/$(whoami)/bin/audioctl"
+OUTPUT_CONF="$PROG_DIR/outputs.conf"
+INCREMENT='5'
 
 # set preliminary values for output devices
 # these can be different after reboots, so we'll check
 # for the correct values as well
-HEADPHONES="4"
-SPEAKERS="1"
+OUTPUT1="4"
+OUTPUT2="1"
 
-source outputs.conf
-#echo "$HEADPHONES_DESC"
-#echo "$SPEAKERS_DESC"
-# `pactl list sinks` to retrieve card info
-# only the index is required for moving audio
-# set output indices
+fullsink="$(pactl list sinks short | awk '{print $1}')"
+runningsinks="$(pactl list sinks short | grep RUNNING | awk '{print $1}')"
 
-tmp_out=""
-tmp_desc=""
+source $OUTPUT_CONF
 
-while read -r line
-do
-	#echo "$line"
-	if [[ $line == "Sink #"* ]]
-	then
-		tmp_out="$(echo $line|rev|cut -c 1|rev)"
-		#printf "Got tmp_out! Sink:%s\n" $tmp_out
-	elif [[ $line == "device.description"* ]]
-	then
-		tmp_desc="$(echo $line | cut -d "=" -f 2)"
-		#printf "Sink:%1s\tDesc:%s\n" "$tmp_out" "$tmp_desc"
-		case $tmp_desc in
-			*$HEADPHONES_DESC*)
-				HEADPHONES="$tmp_out"
-				#printf "Set headphones to sink %s\n" $HEADPHONES
-				;;
-			*$SPEAKERS_DESC*)
-				SPEAKERS="$tmp_out"
-				#printf "Set speakers to sink %s\n" $SPEAKERS
-				;;
+# Setup outputs by user conf file $OUTPUT_CONF
+if [ -f "$OUTPUT_CONF" ]; then
+	tmp_out=""
+	tmp_desc=""
+	while read -r line
+	do
+		case $line in
+			Sink\ #*)
+				tmp_out="$(echo $line|rev|cut -c 1|rev)";;
+
+			device.description*)
+				tmp_desc="$(echo $line | cut -d "=" -f 2)"
+					case $tmp_desc in
+						*$OUTPUT1_DESC*)
+							OUTPUT1="$tmp_out";;
+						*$OUTPUT2_DESC*)
+							OUTPUT2="$tmp_out";;
+					esac
 		esac
-	fi
-done < <(pactl list sinks | grep -e "Sink #" -e "device.description")
+	done < <(pactl list sinks)
+fi
 
-# show help 
 usage(){
-	echo """audioctl - transfer output to another channel
+	echo """audioctl - tcarrio's custom media manipulation script
 
-		headphones		send audio to headphones
-		speakers  		send audio to speakers
-		toggle    		switch audio output device
-		help      		show usage help
+		setup           configure output devices to use
+		list            display output device configuration
+		1               send audio to OUPUT1
+		2               send audio to OUTPUT1
+		sound           sound controls
+		help            show usage help
 """
+	return
+}
+
+sound_usage(){
+	echo """audioctl sound [OPTION]
+
+		up              turn the source volume up
+		down            turn the source volume down
+		toggle          toggle mute status
+"""
+	return
 }
 	
-# run main toggle, checking for a passed value
-main(){
-	if [ -z "$1" ];then
-		usage
+setup(){
+	echo "Setup"
+	index=1
+	while read device; do
+		printf "[%s] - %s\n" $index "$device"
+		index=$(expr $index + 1)
+	done < <(pactl list sinks | grep device.description | awk -F= '{print $2}' | cut -d '"' -f 2)
+	printf "Please select up to two devices: "
+	read newdevs
+}
+
+list(){
+	if [ -f "$OUTPUT_CONF" ];then
+		echo "The following was taken from your outputs.conf file:"
+		cat $OUTPUT_CONF
+	else
+		echo """
+No outputs.conf file was found, please use
+`audioctl setup` to create one
+"""
 	fi
-	#pactl list short sink-inputs
-	for snd in $(pactl list short sink-inputs | awk '{print $1;}' )
-	do 
-		#echo "$snd"
-		pactl move-sink-input $snd $1 1>/dev/null 2>/dev/null
-		pactl set-default-sink $1 1>/dev/null 2>/dev/null
-	done
 }
 
 # check for and parse argument
 case "$1" in
-	headphones)
-		output=$HEADPHONES
+	setup)
+		setup
 		;;
-	speakers)
-		output=$SPEAKERS
+	list)
+		list
+		;;
+	1)
+		output=$OUTPUT1
+		;;
+	2)
+		output=$OUTPUT2
 		;;
 	toggle)
 		current_device="$(pactl list short sink-inputs | tail -n 1 | awk '{print $2;}')"
-		if [ "$current_device" == "$HEADPHONES" ]; then
-			output=$SPEAKERS
+		if [ "$current_device" == "$OUTPUT1" ]; then
+			output=$OUTPUT2
 		else
-			output=$HEADPHONES
+			output=$OUTPUT1
 		fi
+		;;
+	sound)
+		while read sink
+		do
+			case "$2" in	
+				up)
+					echo $sink
+					pactl set-sink-mute $sink false
+					pactl set-sink-volume $sink +$INCREMENT%
+					;;
+				down)
+					pactl set-sink-volume $sink -$INCREMENT%
+					;;
+				mute)
+					pactl set-sink-mute $sink toggle
+					;;
+				*)
+					sound_usage
+					break
+					;;
+			esac
+		done < <(pactl list sinks short | awk '{print $1}')
 		;;
 	*)
 		usage
 		exit 1
 		;;
 esac
-
-#echo "$output"
-main $output
-	
