@@ -54,6 +54,7 @@ usage(){
 		list            display output device configuration
 		1               send audio to OUPUT1
 		2               send audio to OUTPUT2
+		toggle          toggle output device
 		sound           sound controls
 		help            show usage help
 """
@@ -65,7 +66,7 @@ sound_usage(){
 
 		up              turn the source volume up
 		down            turn the source volume down
-		toggle          toggle mute status
+		mute            toggle mute status
 		help            show sound usage help
 """
 	return
