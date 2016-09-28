@@ -2,7 +2,7 @@
 #	Simple utility for toggling audio channels
 #	I don't like pulling up settings to do this so here's a short script 
 # 	Obviously the indices listed only apply to my system
-PROG_DIR="/home/$(whoami)/bin/audioctl"
+PROG_DIR="/home/$(whoami)/.config/audioctl"
 OUTPUT_CONF="$PROG_DIR/outputs.conf"
 INCREMENT='5'
 
@@ -12,19 +12,25 @@ INCREMENT='5'
 OUTPUT1="4"
 OUTPUT2="1"
 
-if [ -f "$OUTPUT_CONF" ];then
-	source $OUTPUT_CONF
+if [ -d "$PROG_DIR" ];then
+	if [ -f "$OUTPUT_CONF" ];then
+		source $OUTPUT_CONF
+	fi
+else
+	mkdir -p "$PROG_DIR"
 fi
 
 # Setup outputs by user conf file $OUTPUT_CONF
 if [ -f "$OUTPUT_CONF" ]; then
+	#echo "Reading outputs.conf"
 	tmp_out=""
 	tmp_desc=""
 	while read -r line
 	do
 		case $line in
 			Sink\ #*)
-				tmp_out="$(echo $line|rev|cut -c 1|rev)";;
+				tmp_out="$(echo $line|rev|cut -c 1|rev)"
+				;;
 
 			device.description*)
 				tmp_desc="$(echo $line | cut -d "=" -f 2)"
@@ -38,7 +44,8 @@ if [ -f "$OUTPUT_CONF" ]; then
 	done < <(pactl list sinks)
 fi
 
-function join_by { local IFS="$1"; shift; echo "$*"; }
+#function join_by { local IFS="$1"; shift; echo "$*"; }
+#join_by , "${array[@]}"
 
 usage(){
 	echo """audioctl - tcarrio's custom media manipulation script
@@ -74,13 +81,19 @@ setup(){
 	printf "Please select up to two devices: "
 	read newdevs
 	newdevsarr=($newdevs)
-	pactl list sinks|grep device.description|awk -F= '{print $2}'|cut -d '"' -f 2|sed -n $(join_by , "${newdevsarr[@]}")p>$PROG_DIR/tmp.conf
+	seddevs=""
+	for i in ${newdevsarr[@]};do
+		seddevs+="$(printf '%s %sp ' '-e' $i)"
+	done
+	pactl list sinks|grep device.description|awk -F= '{print $2}'|cut -d '"' -f 2|sed -n $seddevs>$PROG_DIR/tmp.conf
 	local IFS='
 '	
 	conf_index=1
-	rm $OUTPUT_CONF
+	if [ -f "$OUTPUT_CONF" ]; then
+		rm $OUTPUT_CONF
+	fi
 	cat $PROG_DIR/tmp.conf|while read line; do
-		printf 'OUTPUT%s="%s"\n' $conf_index $line >> $OUTPUT_CONF
+		printf 'OUTPUT%s_DESC="%s"\n' $conf_index $line >> $OUTPUT_CONF
 		conf_index=$(expr $conf_index + 1)
 	done
 	rm $PROG_DIR/tmp.conf
@@ -120,6 +133,11 @@ case "$1" in
 			else
 				output=$OUTPUT1
 			fi
+			#printf "output = %s\n" $output
+			while read sinkinput; do
+				pactl move-sink-input $sinkinput $output 
+			done < <(pactl list short sink-inputs | awk '{print $1;}')
+			pactl set-default-sink $output
 		else
 			echo """
 You have not configured your output devices!
