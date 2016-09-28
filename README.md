@@ -12,21 +12,18 @@ Once you can call upon `audioctl` this is how the script can be used..
 
 ```
 audioctl [OPTION]
-
 		setup           configure output devices to use
 		list            display output device configuration
 		1               send audio to OUPUT1
 		2               send audio to OUTPUT2
+		toggle          toggle output device
 		sound           sound controls
 		help            show usage help
-```
 
-```
 audioctl sound [OPTION]
-
 		up              turn the source volume up
 		down            turn the source volume down
-		toggle          toggle mute status
+		mute            toggle mute status
 		help            show sound usage help
 ```
 
