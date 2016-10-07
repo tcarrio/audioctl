@@ -1,0 +1,9 @@
+#system packages:
+pulseaudio
+pactl
+uptime
+date
+python3
+
+#python packages
+python-mpd2
