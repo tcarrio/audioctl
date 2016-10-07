@@ -207,7 +207,23 @@ do_toggle(){
 }
 
 do_player(){
-	[ -n "$(which mpdctl)" ] && mpdctl $1
+	case $1 in
+		next|previous|pause|toggle)
+			if [ $(ps aux|grep spotify|wc -l) -gt 1 ]; then
+				mpdctl pause
+				case $1 in
+					pause)
+						playerctl play-pause;;
+					*)
+						playerctl $1;;
+				esac
+			else
+				[ -n "$(which mpdctl)" ] && mpdctl $1
+			fi
+			;;
+		*)
+			mpdctl help;;
+	esac
 }
 
 map_devices #sets all $OUTPUT_ variables from $OUTPUT_DESC_CONF

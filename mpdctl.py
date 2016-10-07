@@ -5,10 +5,10 @@ from mpd import MPDClient
 def show_usage():
 	print("""mpdctl -- quick mpd media control
 
-usage: 
-next       play next song in playlist
-previous   play previous song in playlist
-pause      toggle play/pause state
+		next       play next song in playlist
+		previous   play previous song in playlist
+		toggle     toggle play/pause state
+		pause      pause player
 """)
 
 h="localhost"
@@ -25,8 +25,11 @@ try:
 			c.next()
 		elif("previous" in d):
 			c.previous()
-		elif("pause" in d):
+		elif("toggle" in d):
 			c.pause() if c.status()['state']=="play" else c.play()
+		elif("pause" in d):
+			if(c.status()['state']=="play"):
+				c.pause()
 		else:
 			show_usage()
 			#print(invalid_command)
