@@ -20,12 +20,13 @@ if [ -d "$CONF_DIR" ];then
 	if [ -f "$OUTPUT_DESC_CONF" ];then
 		source $OUTPUT_DESC_CONF
 	fi
-	if [ -f "$OUTPUT_CONF" ]; then
-		import_outputs "$OUTPUT_CONF"
-	fi
+#	if [ -f "$OUTPUT_CONF" ]; then
+#		import_outputs "$OUTPUT_CONF"
+#	fi
 else
 	mkdir -p "$CONF_DIR"
 fi
+SILENT=" 2>&1 1>/dev/null "
 
 # Increment value for increasing/decreasing volume
 INCREMENT='5'
@@ -43,6 +44,7 @@ usage(){
 		2               send audio to OUTPUT2
 		toggle          toggle output device
 		sound           sound controls
+		player          control spotify/mpd audio 
 		help            show usage help
 """
 	return
@@ -206,23 +208,36 @@ do_toggle(){
 	fi
 }
 
+do_mpd(){
+	if [ -f "$(which mpc)" ]; then
+		mpc $1
+	elif [ -f "$(which mpdctl)" ]; then
+		mpdctl $1
+	else
+		echo """No compatible mpd client detected!
+Install mpc or mpdctl to continue using player commands
+(mpdctl.github.io)"""
+	fi
+}
+
 do_player(){
 	case $1 in
-		next|previous|pause|toggle)
+		next|previous|pause|toggle|play)
 			if [ $(ps aux|grep spotify|wc -l) -gt 1 ]; then
 				mpdctl pause
 				case $1 in
-					pause)
+					toggle)
 						playerctl play-pause;;
 					*)
 						playerctl $1;;
 				esac
 			else
-				[ -n "$(which mpdctl)" ] && mpdctl $1
+				echo "No detected Spotify client; Using mpd:"
+				do_mpd $@
 			fi
 			;;
 		*)
-			mpdctl help;;
+			do_mpd help;;
 	esac
 }
 

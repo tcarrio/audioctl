@@ -25,7 +25,15 @@ audioctl sound [OPTION]
 		down            turn the source volume down
 		mute            toggle mute status
 		help            show sound usage help
+
+audioctl player [OPTION]
+		next            play next song in queue
+		prev            play previous song in queue
+		toggle          toggle play/pause state
+    pause           pause playlist
+    play            play current song in queue
 ```
+	
 
 The configuration file defaults to `~/.config/audioctl/outputs.conf` for the time being. The first time you use this tool you will have the ability to manipulate anything through `audioctl sound`, however the toggle and audio source output manipulation can only be done after going through `audioctl setup`. 
 
