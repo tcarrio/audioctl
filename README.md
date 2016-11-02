@@ -30,8 +30,8 @@ audioctl player [OPTION]
 		next            play next song in queue
 		prev            play previous song in queue
 		toggle          toggle play/pause state
-    pause           pause playlist
-    play            play current song in queue
+		pause           pause playlist
+		play            play current song in queue
 ```
 	
 
@@ -45,8 +45,8 @@ Known issues:
 * No built packages for any distro
 * In between configuration and code separation
 
+Future development:
 
-
-
-
-
+* The PulseAudio website could be more readily used for existing solutions, such as [this FAQ entry](https://www.freedesktop.org/wiki/Software/PulseAudio/FAQ/#index39h3) which details how to move all applications to a certain output, something my solution currently does along with setting default audio source. 
+* Audio output -> input setup, mapping output from one source to another sink. Could be useful for combining audio channels to feeds. 
+* Pooled audio for streams (combined input/output) since OBS only seems to be pulling one source/sink at a time for me. 
