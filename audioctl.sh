@@ -51,7 +51,7 @@ usage(){
 }
 
 sound_usage(){
-	echo """audioctl sound [OPTION]
+	echo """audioctl sound [OPTION] [all]
 
 		up              turn the source volume up
 		down            turn the source volume down
@@ -157,27 +157,42 @@ list(){
 	fi
 }
 
-do_sound(){
-	while read sink
-	do
+do_volume(){
+	if [ -n "$2" ]; then
 		case "$1" in	
 			up)
-				pactl set-sink-mute $sink false
-				pactl set-sink-volume $sink +$INCREMENT%
+				pactl set-sink-mute $2 false
+				pactl set-sink-volume $2 +$INCREMENT%
 				;;
 			down)
-				pactl set-sink-volume $sink -$INCREMENT%
+				pactl set-sink-volume $2 -$INCREMENT%
 				;;
 			mute)
-				pactl set-sink-mute $sink toggle
+				pactl set-sink-mute $2 toggle
 				;;
 			*)
 				sound_usage
 				break
 				;;
 		esac
-	done < <(pactl list sinks short | awk '{print $1}')
+	fi
 }
+
+do_sound(){
+	case "$2" in
+		all)
+			while read sink
+			do
+				do_volume $1 $sink
+			done < <(pactl list sinks short | awk '{print $1}')
+			;;
+		*)
+			sink="$(pacmd list-sinks|grep '*'|awk '{print $3}')"
+			do_volume $1 $sink
+			;;
+	esac
+}
+
 
 do_toggle(){
 	if [ -n "$OUTPUT1" ];then
@@ -264,7 +279,7 @@ case "$1" in
 	sound)
 		shift
 		if [ -n "$1" ];then
-			do_sound $1
+			do_sound $@
 		fi
 		;;
 	player)
