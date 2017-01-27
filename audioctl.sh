@@ -55,7 +55,7 @@ sound_usage(){
 
 		up              turn the source volume up
 		down            turn the source volume down
-		mute            toggle mute status
+		toggle          toggle mute status
 		help            show sound usage help
 """
 	return
@@ -167,12 +167,11 @@ do_volume(){
 			down)
 				pactl set-sink-volume $2 -$INCREMENT%
 				;;
-			mute)
+			toggle)
 				pactl set-sink-mute $2 toggle
 				;;
 			*)
 				sound_usage
-				break
 				;;
 		esac
 	fi
