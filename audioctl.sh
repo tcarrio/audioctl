@@ -61,6 +61,24 @@ sound_usage(){
 	return
 }
 
+player_usage(){
+	echo """audioctl player [OPTION]
+
+		play    		play the current music player
+		pause   		pause the current music player
+		toggle  		toggle the play/pause status
+		next    		play the next track in the playlist
+		previous		play the previous track in the playlist
+		status  		display the status of the current music player
+		help    		show player usage help
+		
+		Please note that a Spotify instance supercedes mpd clients for
+		the \"current\" music player
+"""
+
+	return
+}
+
 map_devices(){
 	# Setup outputs by user conf file $OUTPUT_DESC_CONF
 	if [ -f "$OUTPUT_DESC_CONF" ]; then
@@ -224,9 +242,9 @@ do_toggle(){
 
 do_mpd(){
 	if [ -f "$(which mpc)" ]; then
-		mpc $1
+		mpc $@
 	elif [ -f "$(which mpdctl)" ]; then
-		mpdctl $1
+		mpdctl $@
 	else
 		echo """No compatible mpd client detected!
 Install mpc or mpdctl to continue using player commands
@@ -236,9 +254,9 @@ Install mpc or mpdctl to continue using player commands
 
 do_player(){
 	case $1 in
-		next|previous|pause|toggle|play)
-			if [ $(ps aux|grep spotify|wc -l) -gt 1 ]; then
-				mpdctl pause
+		next|previous|pause|toggle|play|status)
+			if pgrep -x spotify > /dev/null; then
+				do_mpd pause >/dev/null
 				case $1 in
 					toggle)
 						playerctl play-pause;;
@@ -246,12 +264,16 @@ do_player(){
 						playerctl $1;;
 				esac
 			else
-				echo "No detected Spotify client; Using mpd:"
-				do_mpd $@
+				if [ "$1" == "status" ]; then
+					do_mpd $1
+				else
+					do_mpd $@ >/dev/null
+				fi
+				
 			fi
 			;;
 		*)
-			do_mpd help;;
+			player_usage;;
 	esac
 }
 
