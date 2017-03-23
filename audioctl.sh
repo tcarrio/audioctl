@@ -64,13 +64,13 @@ sound_usage(){
 player_usage(){
 	echo """audioctl player [OPTION]
 
-		play    		play the current music player
-		pause   		pause the current music player
-		toggle  		toggle the play/pause status
-		next    		play the next track in the playlist
-		previous		play the previous track in the playlist
-		status  		display the status of the current music player
-		help    		show player usage help
+		play            play the current music player
+		pause           pause the current music player
+		toggle          toggle the play/pause status
+		next            play the next track in the playlist
+		previous        play the previous track in the playlist
+		status          display the status of the current music player
+		help            show player usage help
 		
 		Please note that a Spotify instance supercedes mpd clients for
 		the \"current\" music player

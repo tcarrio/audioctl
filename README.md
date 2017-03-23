@@ -27,11 +27,13 @@ audioctl sound [OPTION]
 		help            show sound usage help
 
 audioctl player [OPTION]
-		next            play next song in queue
-		prev            play previous song in queue
-		toggle          toggle play/pause state
-		pause           pause playlist
-		play            play current song in queue
+		play            play the current music player
+		pause           pause the current music player
+		toggle          toggle the play/pause status
+		next            play the next track in the playlist
+		previous        play the previous track in the playlist
+		status          display the status of the current music player
+		help            show player usage help
 ```
 	
 
